@@ -7,7 +7,7 @@ services:
     env_file:
       - ./.env
   web:
-    build: ../api_yamdb/
+    image: baluev37/infra_actions:v1.03.2023
     restart: always
     volumes:
       - static_value:/app/static/
