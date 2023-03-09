@@ -42,6 +42,7 @@ jobs:
         uses: docker/build-push-action@v2 
         with:
           push: true
+          context: ./api_yamdb/
           tags: baluev37/infra_actions:v1.03.2023
   
   deploy:
