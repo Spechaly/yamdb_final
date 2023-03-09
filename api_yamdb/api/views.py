@@ -141,5 +141,3 @@ def get_tokens_for_user(request):
     if confirmation_code == user.confirmation_code:
         access = AccessToken.for_user(user)
         return Response({'token': str(access), })
-    else:
-        None
