@@ -1,6 +1,5 @@
 from datetime import datetime
 
-
 from rest_framework import serializers
 from reviews.models import Category, Comment, Genre, Review, Title
 from users.models import User
