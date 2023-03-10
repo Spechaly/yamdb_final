@@ -12,7 +12,7 @@ router_v1.register(
     views.MyProfileViewSet,
     basename='profile'
 )
-router_v1.register('titles', views.TitleViewSet, basename='titles')
+router_v1.register(r'titles', views.TitleViewSet, basename='titles')
 router_v1.register(r'categories', views.CategoryViewSet, basename='categories')
 router_v1.register(r'genres', views.GenreViewSet, basename='genres')
 router_v1.register(
