@@ -56,9 +56,9 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           sudo docker pull ${{ secrets.DOCKER_USERNAME }}/infra_actions:v1.03.2023
-          sudo docker stop $(sudo docker ps -a -q)
-          sudo docker run rm f web 
-          touch .env 
+          sudo docker-compose stop
+          sudo docker-compose rm web
+          touch .env
           echo DJANGO_DEBUG_VALUE=False >> .env
           echo SECRET_KEY=${{ secrets.SECRET_KEY }} >> .env
           echo DB_ENGINE=${{ secrets.DB_ENGINE }} >> .env
