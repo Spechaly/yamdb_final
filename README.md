@@ -1,4 +1,4 @@
-![Deploy](https://github.com/Spechaly/yamdb_final/actions/workflows/yamdb_workfolow.yml/badge.svg)
+[![Django-app workflow](https://github.com/Spechaly/yamdb_final/actions/workflows/yamdb_workflow.yml/badge.svg)](https://github.com/Spechaly/yamdb_final/actions/workflows/yamdb_workflow.yml)
 
 ### Проект Yamdb_final предназначен для сбора отзывов на произведения, произведения делятся на категории, и на жанры, пользователи могут оставлять коментарии под произведениями.
 
