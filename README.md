@@ -1,4 +1,4 @@
-![Deploy](https://github.com/Spechaly/yamdb_final/actions/workflows/yamdb_workfolow.yml/badge.svg)
+![Deploy](https://github.com/Spechaly/yamdb_final/actions/.github/workflows/yamdb_workfolow.yml/badge.svg)
 
 ### Проект Yamdb_final предназначен для сбора отзывов на произведения, произведения делятся на категории, и на жанры, пользователи могут оставлять коментарии под произведениями.
 
@@ -12,7 +12,7 @@
 - PostgreSQL
 - GIT
 
-### Сайт можно посетить по ссылке http://158.160.27.187:
+### IP 158.160.27.187:
 
 ### Шаблон ENV файла расположен по пути infra/.env:
 ```
