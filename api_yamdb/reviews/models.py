@@ -91,7 +91,7 @@ class Review(models.Model):
             models.UniqueConstraint(
                 fields=['author', 'title'],
                 name='unique_review'
-             )
+            )
         ]
 
 
