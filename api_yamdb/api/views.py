@@ -1,18 +1,17 @@
-from rest_framework import status, filters
-from django.shortcuts import get_object_or_404
+from api import mixins, permissions, serializers
+from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from rest_framework import viewsets, filters
-from rest_framework.decorators import api_view, permission_classes, action
+from django.db.models import Avg
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
-from django.contrib.auth.tokens import default_token_generator
-from django_filters.rest_framework import DjangoFilterBackend
-from django.db.models import Avg
-
-from reviews.models import Title, Review, Genre, Category
-from api import serializers, permissions, mixins
+from reviews.models import Category, Genre, Review, Title
 from users.models import User
+
 from .filters import TitleFilter
 
 
