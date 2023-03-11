@@ -11,8 +11,6 @@ from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
 from users.models import User
 
-from .filters import TitleFilter
-
 
 class TitleViewSet(viewsets.ModelViewSet):
     """
@@ -22,7 +20,6 @@ class TitleViewSet(viewsets.ModelViewSet):
     queryset = Title.objects.annotate(
         rating=Avg('reviews__score')).order_by('name')
     permission_classes = (permissions.IsAdminOrReadOnly, )
-    filterset_class = TitleFilter
 
     def get_serializer_class(self):
         if self.action in ('list', 'retrieve'):
