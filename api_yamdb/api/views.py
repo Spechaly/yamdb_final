@@ -1,11 +1,11 @@
 from api import mixins, permissions, serializers
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.db.models import Avg
 from django.shortcuts import get_object_or_404
-from rest_framework import filters, status, viewsets
-from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.permissions import AllowAny
+from rest_framework import viewsets
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.pagination import PageNumberPagination
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import AccessToken
 from reviews.models import Category, Genre, Review, Title
@@ -17,14 +17,10 @@ class TitleViewSet(viewsets.ModelViewSet):
     Обработка операций с произведениями.
     """
 
-    queryset = Title.objects.annotate(
-        rating=Avg('reviews__score')).order_by('name')
+    queryset = Title.objects.all()
+    serializer_class = serializers.TitleSerializer
     permission_classes = (permissions.IsAdminOrReadOnly, )
-
-    def get_serializer_class(self):
-        if self.action in ('list', 'retrieve'):
-            return serializers.TitleReadSerializer
-        return serializers.TitleWriteSerializer
+    pagination_class = PageNumberPagination
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -41,13 +37,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
         return title.reviews.all()
 
     def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user,
-            title=get_object_or_404(
-                Title,
-                id=self.kwargs.get('title_id')
-            )
-        )
+        serializer.save(author=self.request.user)
 
 
 class GenreViewSet(mixins.ListCreateDeleteViewSet):
@@ -58,9 +48,8 @@ class GenreViewSet(mixins.ListCreateDeleteViewSet):
     queryset = Genre.objects.all()
     serializer_class = serializers.GenreSerializer
     permission_classes = (permissions.IsAdminOrReadOnly, )
+    pagination_class = PageNumberPagination
     lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter, )
-    search_fields = ('name',)
 
 
 class CategoryViewSet(mixins.ListCreateDeleteViewSet):
@@ -71,9 +60,8 @@ class CategoryViewSet(mixins.ListCreateDeleteViewSet):
     queryset = Category.objects.all()
     serializer_class = serializers.CategorySerializer
     permission_classes = (permissions.IsAdminOrReadOnly, )
+    pagination_class = PageNumberPagination
     lookup_field = 'slug'
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
 
 
 class CommentViewSet(viewsets.ModelViewSet):
@@ -85,18 +73,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     permission_classes = (permissions.IsStaffOrAuthorOrReadOnly, )
 
     def get_queryset(self):
-        title_id = self.kwargs.get('title_id')
-        title = get_object_or_404(Title, id=title_id)
         review_id = self.kwargs.get('review_id')
         review = get_object_or_404(Review, id=review_id)
-        if review.title == title:
-            return review.comments.all()
+        return review.comments.all()
 
     def perform_create(self, serializer):
-        serializer.save(
-            author=self.request.user,
-            review=get_object_or_404(Review, id=self.kwargs.get('review_id'))
-        )
+        serializer.save(author=self.request.user)
 
 
 class UserViewSet(viewsets.ModelViewSet):
@@ -104,56 +86,22 @@ class UserViewSet(viewsets.ModelViewSet):
     Обработка операций с пользователями.
     """
 
+    queryset = User.objects.all()
     serializer_class = serializers.UserSerializer
+    permission_classes = (IsAdminUser, )
     lookup_field = 'username'
 
+
+class MyProfileViewSet(viewsets.ModelViewSet):
+    """
+    Запрос и изменение данных своего профиля.
+    """
+
+    serializer_class = serializers.UserSerializer
+    permission_classes = (permissions.PatchOrReadOnly, )
+
     def get_queryset(self):
-        if self.request.path == '/api/v1/users/me/':
-            return User.objects.get(id=self.request.user.id)
-        else:
-            return User.objects.all()
-
-    def get_object(self):
-        if self.request.path == '/api/v1/users/me/':
-            return User.objects.get(id=self.request.user.id)
-        return super().get_object()
-
-    def get_permissions(self):
-        if self.request.path == '/api/v1/users/me/':
-            permission_classes = (permissions.IsUser, )
-        else:
-            permission_classes = (permissions.IsAdminUser, )
-        return [permission() for permission in permission_classes]
-
-    def destroy(self, request, *args, **kwargs):
-        if self.request.path == '/api/v1/users/me/':
-            return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
-        instance = self.get_object()
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-    def partial_update(self, request, *args, **kwargs):
-        not_valid = (
-            request.data.get('role') != self.request.user.role
-            and request.data.get('role') is not None
-        )
-        admin = request.user.role == 'admin' or request.user.is_superuser
-
-        if 'role' in request.data and (not admin or not_valid):
-            user = User.objects.get(id=self.request.user.id)
-            serializer = self.get_serializer(user)
-            return Response(
-                serializer.data,
-                status=status.HTTP_400_BAD_REQUEST)
-        else:
-            kwargs['partial'] = True
-            return self.update(request, *args, **kwargs)
-
-    @action(detail=True, methods=['get', 'patch'], url_path='me')
-    def my_profile(self, request):
-        user = User.objects.get(id=self.request.user.id)
-        serializer = self.get_serializer(user)
-        return Response(serializer.data)
+        return self.request.user
 
 
 class UserSignup(mixins.CreateViewSet):
@@ -161,26 +109,23 @@ class UserSignup(mixins.CreateViewSet):
     serializer_class = serializers.UserSignupSerializer
     queryset = User.objects.all()
     permission_classes = (AllowAny, )
-    http_method_names = ['post']
 
-    def create(self, request):
+    def post(self, request):
         """Обработка пост запроса."""
-
         serializer = serializers.UserSignupSerializer(data=request.data)
+
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        user = User.objects.get(
+        user = get_object_or_404(
+            User,
             username=serializer.validated_data['username']
         )
-        code = default_token_generator.make_token(user)
-        user.confirmation_code = code
-        user.save()
-        user_email = user.email
+        confirmation_code = default_token_generator.make_token(user)
         send_mail(
-            'Код подтверждения',
-            f'Используй этот код {code}',
-            'auth@yamdb.ru',
-            [f'{user_email}'],
+            subject='Код подтверждения',
+            message=(f'Используй этот код {confirmation_code}'),
+            rrom_email=None,
+            recipient_list=[user.email],
         )
         return Response(serializer.data)
 
@@ -189,15 +134,10 @@ class UserSignup(mixins.CreateViewSet):
 @permission_classes([AllowAny])
 def get_tokens_for_user(request):
     """Создание JWT-токена."""
-    if 'username' in request.data:
-        user = get_object_or_404(
-            User,
-            username=request.data['username']
-        )
-        if 'confirmation_code' in request.data:
-            confirmation_code = request.data['confirmation_code']
-            if confirmation_code == user.confirmation_code:
-                access = AccessToken.for_user(user)
-                return Response({'token': str(access), })
-        return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
-    return Response(request.data, status=status.HTTP_400_BAD_REQUEST)
+    confirmation_code = request.data['confirmation_code']
+    user = User.objects.get(
+        username=request.data['username']
+    )
+    if confirmation_code == user.confirmation_code:
+        access = AccessToken.for_user(user)
+        return Response({'token': str(access), })

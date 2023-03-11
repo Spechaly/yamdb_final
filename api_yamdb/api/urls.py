@@ -6,14 +6,15 @@ app_name = 'api'
 
 router_v1 = routers.DefaultRouter()
 router_v1.register('auth/signup', views.UserSignup)
+router_v1.register(r'users', views.UserViewSet, basename='users')
 router_v1.register(
-    'users',
-    views.UserViewSet,
-    basename='users'
+    'users/me',
+    views.MyProfileViewSet,
+    basename='profile'
 )
 router_v1.register(r'titles', views.TitleViewSet, basename='titles')
-router_v1.register('categories', views.CategoryViewSet, basename='сategories')
-router_v1.register('genres', views.GenreViewSet, basename='genres')
+router_v1.register(r'categories', views.CategoryViewSet, basename='categories')
+router_v1.register(r'genres', views.GenreViewSet, basename='genres')
 router_v1.register(
     r'titles/(?P<title_id>\d+)/reviews',
     views.ReviewViewSet,
